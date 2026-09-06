@@ -257,7 +257,13 @@ async function loadRecent() {
 function renderRecentTable(target, rows) {
   const el = $(target);
   if (!rows.length) { el.innerHTML = '<div class="empty-state">Nenhum lançamento ainda.</div>'; return; }
-  el.innerHTML = `<div class="table-scroll"><table class="list"><thead><tr>
+  const total = rows.reduce((s, r) => s + Number(r.valor), 0);
+  el.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">
+      <span style="font-size:12px;color:var(--ink-soft);">${rows.length} lançamento(s)</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:15px;color:var(--accent-ink);">Total: ${fmtMoney(total)}</span>
+    </div>
+    <div class="table-scroll"><table class="list"><thead><tr>
     <th>Data</th><th>Categoria</th><th>Descrição</th><th>Valor</th><th></th>
   </tr></thead><tbody>${rows.map(r => `
     <tr data-id="${r.id}">
@@ -371,23 +377,36 @@ function renderHistorico() {
       <div class="form-grid">
         <div class="field"><label>De</label><input type="date" id="histFrom" value="${from.toISOString().slice(0,10)}"></div>
         <div class="field"><label>Até</label><input type="date" id="histTo" value="${todayISO()}"></div>
-        <div class="field full"><label>Categoria</label>
+        <div class="field"><label>Categoria</label>
           <select id="histCat"><option value="">Todas</option>${Object.keys(CATEGORIAS).map(c => `<option value="${c}">${c}</option>`).join('')}</select>
+        </div>
+        <div class="field"><label>Subcategoria</label>
+          <select id="histSub"><option value="">Todas</option></select>
         </div>
       </div>
       <div id="histList" style="margin-top:14px;"><div class="empty-state">Carregando…</div></div>
     </section>
   `;
+  const subSelect = $('#histSub');
+  function fillHistSub() {
+    const cat = $('#histCat').value;
+    const opts = cat ? CATEGORIAS[cat] : Object.values(CATEGORIAS).flat();
+    subSelect.innerHTML = '<option value="">Todas</option>' + opts.map(s => `<option value="${s}">${s}</option>`).join('');
+  }
+  fillHistSub();
+
   const load = async () => {
-    const from = $('#histFrom').value, to = $('#histTo').value, cat = $('#histCat').value;
+    const from = $('#histFrom').value, to = $('#histTo').value, cat = $('#histCat').value, sub = subSelect.value;
     let path = `despesas?select=*&data=gte.${from}&data=lte.${to}&order=data.desc`;
     if (cat) path += `&categoria=eq.${encodeURIComponent(cat)}`;
+    if (sub) path += `&subcategoria=eq.${encodeURIComponent(sub)}`;
     const rows = await sbFetch(path);
     renderRecentTable('#histList', rows);
   };
   $('#histFrom').addEventListener('change', load);
   $('#histTo').addEventListener('change', load);
-  $('#histCat').addEventListener('change', load);
+  $('#histCat').addEventListener('change', () => { fillHistSub(); load(); });
+  $('#histSub').addEventListener('change', load);
   load();
 }
 
