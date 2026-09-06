@@ -113,6 +113,8 @@ const CATEGORIAS = {
 let activeTab = 'notas';
 let despesasCache = [];
 let funcionariosCache = [];
+let fornecedoresCache = [];
+const NOVO_FORNECEDOR = '__novo__';
 
 const $ = (sel, el = document) => el.querySelector(sel);
 const $$ = (sel, el = document) => Array.from(el.querySelectorAll(sel));
@@ -160,7 +162,7 @@ function renderNotas() {
         </div>
         <div class="field"><label>Subcategoria</label><select id="fSubcategoria"></select></div>
         <div class="field full"><label>Descrição</label><input type="text" id="fDescricao" placeholder="Ex: compra de embalagens"></div>
-        <div class="field"><label>Fornecedor (opcional)</label><input type="text" id="fFornecedor"></div>
+        <div class="field"><label>Fornecedor (opcional)</label><select id="fFornecedor"><option value="">—</option></select></div>
         <div class="field"><label>Forma de pagamento</label>
           <select id="fForma">
             <option value="">—</option>
@@ -184,6 +186,8 @@ function renderNotas() {
   }
   catSelect.addEventListener('change', fillSub);
   fillSub();
+  loadFornecedores();
+  $('#fFornecedor').addEventListener('change', onFornecedorChange);
 
   $('#btnLancar').addEventListener('click', async () => {
     const valor = parseFloat($('#fValor').value);
@@ -194,7 +198,7 @@ function renderNotas() {
       subcategoria: subSelect.value,
       descricao: $('#fDescricao').value || null,
       valor: valor,
-      fornecedor: $('#fFornecedor').value || null,
+      fornecedor: (fSelected => fSelected && fSelected !== NOVO_FORNECEDOR ? fSelected : null)($('#fFornecedor').value),
       forma_pagamento: $('#fForma').value || null,
       origem: 'nota'
     };
@@ -202,6 +206,7 @@ function renderNotas() {
       await sbFetch('despesas', { method: 'POST', headers: { 'Prefer': 'return=minimal' }, body: JSON.stringify([payload]) });
       showToast('Lançado: ' + payload.subcategoria + ' — ' + fmtMoney(valor));
       $('#fValor').value = ''; $('#fDescricao').value = ''; $('#fFornecedor').value = '';
+      $('#fForma').value = '';
       loadRecent();
     } catch (e) {
       showToast('Erro ao lançar — tenta de novo');
@@ -209,6 +214,35 @@ function renderNotas() {
   });
 
   loadRecent();
+}
+
+async function loadFornecedores() {
+  try {
+    fornecedoresCache = await sbFetch('fornecedores?select=*&ativo=eq.true&order=nome.asc');
+  } catch (e) {
+    fornecedoresCache = [];
+  }
+  const sel = $('#fFornecedor');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">—</option>'
+    + fornecedoresCache.map(f => `<option value="${f.nome}">${f.nome}</option>`).join('')
+    + `<option value="${NOVO_FORNECEDOR}">+ Novo fornecedor...</option>`;
+}
+
+async function onFornecedorChange() {
+  const sel = $('#fFornecedor');
+  if (sel.value !== NOVO_FORNECEDOR) return;
+  const nome = prompt('Nome do novo fornecedor:');
+  if (!nome || !nome.trim()) { sel.value = ''; return; }
+  try {
+    await sbFetch('fornecedores', { method: 'POST', headers: { 'Prefer': 'return=minimal' }, body: JSON.stringify([{ nome: nome.trim() }]) });
+    await loadFornecedores();
+    sel.value = nome.trim();
+    showToast('Fornecedor criado: ' + nome.trim());
+  } catch (e) {
+    showToast('Erro ao criar fornecedor (já existe?)');
+    sel.value = '';
+  }
 }
 
 async function loadRecent() {
