@@ -1,0 +1,424 @@
+<title>Controle de Estoque</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Work+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap');
+
+  :root {
+    --bg: #f5f4ee;
+    --bg-raised: #ffffff;
+    --ink: #23271f;
+    --ink-soft: #5b6157;
+    --border: #dedad0;
+    --accent: #2c6b5e;
+    --accent-soft: #e3efe9;
+    --accent-ink: #0f3a30;
+    --warn: #a8631a;
+    --warn-soft: #fbecd9;
+    --danger: #b13a2f;
+    --danger-soft: #fbe4e0;
+    --ok: #3a7d3f;
+    --chip-bg: #eceae1;
+    --shadow: 0 1px 2px rgba(35,39,31,0.06), 0 4px 14px rgba(35,39,31,0.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #1b1d19;
+      --bg-raised: #24261f;
+      --ink: #ece9e0;
+      --ink-soft: #a5a99c;
+      --border: #383b32;
+      --accent: #6cc4ac;
+      --accent-soft: #23342d;
+      --accent-ink: #a9e6d1;
+      --warn: #e0a955;
+      --warn-soft: #3a2f1c;
+      --danger: #e28579;
+      --danger-soft: #3a221e;
+      --ok: #7bc47f;
+      --chip-bg: #2c2e26;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 4px 14px rgba(0,0,0,0.25);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #1b1d19;
+    --bg-raised: #24261f;
+    --ink: #ece9e0;
+    --ink-soft: #a5a99c;
+    --border: #383b32;
+    --accent: #6cc4ac;
+    --accent-soft: #23342d;
+    --accent-ink: #a9e6d1;
+    --warn: #e0a955;
+    --warn-soft: #3a2f1c;
+    --danger: #e28579;
+    --danger-soft: #3a221e;
+    --ok: #7bc47f;
+    --chip-bg: #2c2e26;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 4px 14px rgba(0,0,0,0.25);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Work Sans', system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.45;
+  }
+  h1, h2, h3 { font-family: 'Fraunces', Georgia, serif; text-wrap: balance; margin: 0; }
+  .tabular { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+
+  .wrap { max-width: 760px; margin: 0 auto; padding: 0 0 80px; }
+
+  header.top {
+    position: sticky; top: 0; z-index: 20;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 18px 12px;
+  }
+  header.top .title-row {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+    margin-bottom: 12px;
+  }
+  header.top h1 { font-size: 22px; font-weight: 600; color: var(--accent-ink); }
+  header.top .subtitle { font-size: 12.5px; color: var(--ink-soft); margin-top: 2px; }
+
+  .controls-row { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  input[type="date"], input[type="search"], select {
+    font: inherit; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--bg-raised); color: var(--ink);
+  }
+  input[type="search"] { flex: 1; min-width: 140px; }
+
+  .chips { display: flex; gap: 6px; overflow-x: auto; padding: 10px 18px 4px; }
+  .chip {
+    flex: none; padding: 6px 12px; border-radius: 999px; background: var(--chip-bg);
+    font-size: 12.5px; font-weight: 600; color: var(--ink-soft); cursor: pointer; white-space: nowrap;
+    border: 1px solid transparent;
+  }
+  .chip.active { background: var(--accent-soft); color: var(--accent-ink); border-color: var(--accent); }
+
+  main { padding: 4px 14px 0; }
+
+  .cat-heading {
+    font-family: 'Fraunces', Georgia, serif; font-weight: 600; font-size: 13px;
+    letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-soft);
+    margin: 22px 6px 8px; display: flex; align-items: center; gap: 8px;
+  }
+  .cat-heading::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+
+  .row-card {
+    background: var(--bg-raised); border: 1px solid var(--border); border-radius: 12px;
+    padding: 12px 14px; margin-bottom: 8px; box-shadow: var(--shadow);
+  }
+  .row-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+  .row-name { font-weight: 600; font-size: 14.5px; }
+  .row-meta { font-size: 12px; color: var(--ink-soft); margin-top: 2px; }
+  .unit-badge {
+    font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 6px;
+    background: var(--chip-bg); color: var(--ink-soft); text-transform: uppercase;
+  }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; margin-top: 5px; background: var(--border); }
+  .status-dot.ok { background: var(--ok); }
+  .status-dot.warn { background: var(--warn); }
+  .status-dot.dirty { background: var(--ink-soft); }
+
+  .inputs-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .field label { display: block; font-size: 11px; color: var(--ink-soft); margin-bottom: 3px; font-weight: 600; }
+  .field input {
+    width: 100%; font: inherit; padding: 8px 8px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--bg); color: var(--ink); font-family: 'IBM Plex Mono', monospace; font-size: 14px;
+  }
+  .field input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  .warn-banner {
+    margin-top: 10px; padding: 9px 11px; border-radius: 8px; background: var(--warn-soft);
+    color: var(--warn); font-size: 12.5px; font-weight: 500; display: flex; gap: 8px; align-items: flex-start;
+  }
+  .warn-banner button {
+    font: inherit; font-weight: 700; font-size: 12px; background: none; border: 1px solid var(--warn);
+    color: var(--warn); border-radius: 6px; padding: 3px 8px; cursor: pointer; flex: none;
+  }
+  .prev-hint { font-size: 11.5px; color: var(--ink-soft); margin-top: 8px; }
+
+  .empty-state {
+    text-align: center; padding: 60px 20px; color: var(--ink-soft);
+  }
+  .empty-state h2 { font-size: 18px; color: var(--ink); margin-bottom: 6px; }
+
+  .toast {
+    position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%);
+    background: var(--accent-ink); color: var(--bg); padding: 9px 16px; border-radius: 999px;
+    font-size: 13px; font-weight: 600; box-shadow: var(--shadow); opacity: 0; pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    z-index: 50;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(-4px); }
+
+  ::selection { background: var(--accent-soft); }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="title-row">
+      <div>
+        <h1>Controle de Estoque</h1>
+        <div class="subtitle">La Bella Donna — Pelotas</div>
+      </div>
+      <input type="date" id="dateInput">
+    </div>
+    <div class="controls-row" id="fillControls">
+      <input type="search" id="searchInput" placeholder="Buscar insumo...">
+    </div>
+  </header>
+
+  <div id="chipsRow" class="chips"></div>
+
+  <main id="mainArea">
+    <div class="empty-state" id="loadingState">Carregando insumos…</div>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = "https://fwsvefewovxfdjytktxn.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3c3ZlZmV3b3Z4ZmRqeXRrdHhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc2Nzg4MzMsImV4cCI6MjEwMzI1NDgzM30.hweZym6XaB1G1QCSFLXxE4Sm2JhC775XxW6nhtZ0APc";
+
+const CATEGORY_ORDER = ["Embutidos", "Queijos", "Carnes", "Molhos", "Vegetais", "Outros"];
+const VARIATION_THRESHOLD = 0.30;
+
+let insumos = [];
+let history = [];         // recent estoque_diario rows (last ~60 days)
+let activeCategory = 'Todos';
+let searchTerm = '';
+let overrides = {};       // insumo_id -> true, once user confirms an out-of-range save
+
+const $ = (sel, el = document) => el.querySelector(sel);
+const $$ = (sel, el = document) => Array.from(el.querySelectorAll(sel));
+
+function todayISO() {
+  const d = new Date();
+  return d.toISOString().slice(0, 10);
+}
+
+function showToast(msg) {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(showToast._h);
+  showToast._h = setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+async function sbFetch(path, opts = {}) {
+  const headers = Object.assign({
+    'apikey': SUPABASE_ANON_KEY,
+    'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+    'Content-Type': 'application/json; charset=utf-8'
+  }, opts.headers || {});
+  const res = await fetch(SUPABASE_URL + '/rest/v1/' + path, Object.assign({}, opts, { headers }));
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error('Supabase error ' + res.status + ': ' + text);
+  }
+  const ct = res.headers.get('content-type') || '';
+  return ct.includes('application/json') ? res.json() : null;
+}
+
+function fmt(n) {
+  if (n === null || n === undefined || isNaN(n)) return '—';
+  return Number(n).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 3 });
+}
+
+function prevEntryFor(insumoId, beforeDate) {
+  const rows = history.filter(h => h.insumo_id === insumoId && h.data < beforeDate);
+  if (!rows.length) return null;
+  rows.sort((a, b) => a.data < b.data ? 1 : -1);
+  return rows[0];
+}
+
+async function loadData() {
+  try {
+    const [ins, hist] = await Promise.all([
+      sbFetch('insumos?select=*&ativo=eq.true&order=nome.asc'),
+      sbFetch('estoque_diario?select=*&order=data.desc&limit=6000')
+    ]);
+    insumos = ins;
+    history = hist;
+    render();
+  } catch (e) {
+    $('#mainArea').innerHTML = '<div class="empty-state"><h2>Não consegui carregar</h2><p>' + e.message + '</p></div>';
+  }
+}
+
+function buildChips() {
+  const row = $('#chipsRow');
+  const cats = ['Todos'].concat(CATEGORY_ORDER.filter(c => insumos.some(i => i.categoria === c)));
+  row.innerHTML = cats.map(c =>
+    `<div class="chip ${c === activeCategory ? 'active' : ''}" data-cat="${c}">${c}</div>`
+  ).join('');
+  $$('.chip', row).forEach(chip => {
+    chip.addEventListener('click', () => {
+      activeCategory = chip.dataset.cat;
+      render();
+    });
+  });
+}
+
+function statusFor(insumoId, date) {
+  const row = history.find(h => h.insumo_id === insumoId && h.data === date);
+  return row || null;
+}
+
+function renderPreencher() {
+  const date = $('#dateInput').value;
+  const term = searchTerm.trim().toLowerCase();
+
+  let list = insumos.filter(i => activeCategory === 'Todos' || i.categoria === activeCategory);
+  if (term) list = list.filter(i => i.nome.toLowerCase().includes(term));
+
+  const byCat = {};
+  list.forEach(i => {
+    const c = i.categoria || 'Outros';
+    (byCat[c] = byCat[c] || []).push(i);
+  });
+
+  const order = CATEGORY_ORDER.filter(c => byCat[c]).concat(Object.keys(byCat).filter(c => !CATEGORY_ORDER.includes(c)));
+
+  if (!list.length) {
+    $('#mainArea').innerHTML = '<div class="empty-state"><h2>Nada encontrado</h2><p>Tenta outra busca ou categoria.</p></div>';
+    return;
+  }
+
+  let html = '';
+  order.forEach(cat => {
+    html += `<div class="cat-heading">${cat}</div>`;
+    byCat[cat].forEach(ins => {
+      const existing = statusFor(ins.id, date);
+      const prev = prevEntryFor(ins.id, date);
+      const prevTotal = prev ? (Number(prev.estoque_fechado_final) + Number(prev.estoque_em_uso_final)) : null;
+      html += `
+        <div class="row-card" data-insumo="${ins.id}">
+          <div class="row-top">
+            <div>
+              <div class="row-name">${ins.nome}</div>
+              <div class="row-meta"><span class="unit-badge">${ins.unidade}</span></div>
+            </div>
+            <div class="status-dot" data-role="dot"></div>
+          </div>
+          <div class="inputs-grid">
+            <div class="field">
+              <label>Fechado (${ins.unidade})</label>
+              <input type="number" step="0.01" inputmode="decimal" data-role="fechado" value="${existing ? existing.estoque_fechado_final : ''}">
+            </div>
+            <div class="field">
+              <label>Em uso (${ins.unidade})</label>
+              <input type="number" step="0.01" inputmode="decimal" data-role="emuso" value="${existing ? existing.estoque_em_uso_final : ''}">
+            </div>
+            <div class="field">
+              <label>Compras hoje</label>
+              <input type="number" step="0.01" inputmode="decimal" data-role="compras" value="${existing ? existing.compras_dia : ''}">
+            </div>
+          </div>
+          ${prevTotal !== null ? `<div class="prev-hint">Último registro (${prev.data.split('-').reverse().join('/')}): <strong class="tabular">${fmt(prevTotal)} ${ins.unidade}</strong></div>` : `<div class="prev-hint">Primeiro registro deste insumo.</div>`}
+          <div class="warn-slot"></div>
+        </div>`;
+    });
+  });
+
+  $('#mainArea').innerHTML = html;
+  $$('.row-card').forEach(wireRowCard);
+}
+
+function wireRowCard(card) {
+  const insumoId = Number(card.dataset.insumo);
+  const ins = insumos.find(i => i.id === insumoId);
+  const date = $('#dateInput').value;
+  const fechadoInput = $('[data-role="fechado"]', card);
+  const emusoInput = $('[data-role="emuso"]', card);
+  const comprasInput = $('[data-role="compras"]', card);
+  const dot = $('[data-role="dot"]', card);
+
+  const existing = statusFor(insumoId, date);
+  if (existing) dot.classList.add('ok');
+
+  async function trySave() {
+    const fechado = parseFloat(fechadoInput.value);
+    const emuso = parseFloat(emusoInput.value);
+    const compras = parseFloat(comprasInput.value) || 0;
+    if (isNaN(fechado) && isNaN(emuso)) return;
+
+    const totalHoje = (isNaN(fechado) ? 0 : fechado) + (isNaN(emuso) ? 0 : emuso);
+    const prev = prevEntryFor(insumoId, date);
+    const prevTotal = prev ? (Number(prev.estoque_fechado_final) + Number(prev.estoque_em_uso_final)) : null;
+
+    let variPct = null;
+    if (prevTotal !== null && prevTotal > 0) {
+      variPct = (totalHoje - prevTotal) / prevTotal;
+    }
+
+    const overKey = insumoId + ':' + date;
+    const outOfRange = variPct !== null && Math.abs(variPct) > VARIATION_THRESHOLD && compras === 0;
+
+    const warnSlot = $('.warn-slot', card);
+    if (outOfRange && !overrides[overKey]) {
+      dot.className = 'status-dot warn';
+      const pct = (variPct * 100).toFixed(0);
+      warnSlot.innerHTML = `
+        <div class="warn-banner">
+          <span>Isso está ${pct > 0 ? pct + '% acima' : Math.abs(pct) + '% abaixo'} do último registro (${fmt(prevTotal)} ${ins.unidade}), sem compra lançada. Confere se digitou em ${ins.unidade === 'kg' ? 'UN em vez de KG' : 'KG em vez de UN'} por engano.</span>
+          <button data-role="confirm">Está certo, salvar</button>
+        </div>`;
+      $('[data-role="confirm"]', warnSlot).addEventListener('click', () => {
+        overrides[overKey] = true;
+        warnSlot.innerHTML = '';
+        doSave(fechado, emuso, compras, dot);
+      });
+      return;
+    }
+
+    warnSlot.innerHTML = '';
+    doSave(fechado, emuso, compras, dot);
+  }
+
+  async function doSave(fechado, emuso, compras, dot) {
+    dot.className = 'status-dot dirty';
+    try {
+      await sbFetch('estoque_diario?on_conflict=data,insumo_id', {
+        method: 'POST',
+        headers: { 'Prefer': 'resolution=merge-duplicates,return=representation' },
+        body: JSON.stringify([{
+          data: date,
+          insumo_id: insumoId,
+          estoque_fechado_final: isNaN(fechado) ? 0 : fechado,
+          estoque_em_uso_final: isNaN(emuso) ? 0 : emuso,
+          compras_dia: compras
+        }])
+      });
+      dot.className = 'status-dot ok';
+      const idx = history.findIndex(h => h.insumo_id === insumoId && h.data === date);
+      const newRow = { data: date, insumo_id: insumoId, estoque_fechado_final: fechado, estoque_em_uso_final: emuso, compras_dia: compras };
+      if (idx >= 0) history[idx] = newRow; else history.push(newRow);
+      showToast('Salvo: ' + ins.nome);
+    } catch (e) {
+      dot.className = 'status-dot warn';
+      showToast('Erro ao salvar — tenta de novo');
+    }
+  }
+
+  [fechadoInput, emusoInput, comprasInput].forEach(inp => {
+    inp.addEventListener('blur', trySave);
+  });
+}
+
+function render() {
+  buildChips();
+  renderPreencher();
+}
+
+$('#dateInput').value = todayISO();
+$('#dateInput').addEventListener('change', render);
+$('#searchInput').addEventListener('input', (e) => { searchTerm = e.target.value; render(); });
+
+loadData();
+</script>
