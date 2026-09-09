@@ -296,7 +296,7 @@ function renderPreencher() {
     byCat[cat].forEach(ins => {
       const existing = statusFor(ins.id, date);
       const prev = prevEntryFor(ins.id, date);
-      const prevTotal = prev ? (Number(prev.estoque_fechado_final) + Number(prev.estoque_em_uso_final)) : null;
+      const prevTotal = prev ? (Number(prev.estoque_fechado_final) + Number(prev.estoque_em_uso_final) + Number(prev.compras_dia || 0)) : null;
       html += `
         <div class="row-card" data-insumo="${ins.id}">
           <div class="row-top">
@@ -348,9 +348,9 @@ function wireRowCard(card) {
     const compras = parseFloat(comprasInput.value) || 0;
     if (isNaN(fechado) && isNaN(emuso)) return;
 
-    const totalHoje = (isNaN(fechado) ? 0 : fechado) + (isNaN(emuso) ? 0 : emuso);
+    const totalHoje = (isNaN(fechado) ? 0 : fechado) + (isNaN(emuso) ? 0 : emuso) + compras;
     const prev = prevEntryFor(insumoId, date);
-    const prevTotal = prev ? (Number(prev.estoque_fechado_final) + Number(prev.estoque_em_uso_final)) : null;
+    const prevTotal = prev ? (Number(prev.estoque_fechado_final) + Number(prev.estoque_em_uso_final) + Number(prev.compras_dia || 0)) : null;
 
     let variPct = null;
     if (prevTotal !== null && prevTotal > 0) {
