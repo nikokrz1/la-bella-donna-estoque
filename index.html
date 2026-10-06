@@ -359,16 +359,24 @@ function wireRowCard(card) {
 
     const warnSlot = $('.warn-slot', card);
 
-    // Bloqueio rígido: consumo não pode ser negativo (estoque aumentou sem compra que explique)
-    if (prevTotal !== null) {
+    const overKey = insumoId + ':' + date;
+
+    // Consumo negativo (estoque aumentou sem compra que explique): avisa, mas deixa salvar se confirmar
+    if (prevTotal !== null && !overrides[overKey]) {
       const consumoImplicito = prevTotal - totalHojeSemCompra;
       if (consumoImplicito < -0.001) {
         dot.className = 'status-dot warn';
         warnSlot.innerHTML = `
-          <div class="danger-banner">
-            Isso daria um consumo negativo (${fmt(consumoImplicito)} ${ins.unidade}) — o estoque aumentou sem uma compra que explique.
-            Some ${fmt(Math.abs(consumoImplicito))} ${ins.unidade} no campo "Compras hoje", ou confere se o Fechado/Em uso está certo.
+          <div class="warn-banner">
+            <span>Isso daria um consumo negativo (${fmt(consumoImplicito)} ${ins.unidade}) — o estoque aumentou sem uma compra que explique.
+            Some ${fmt(Math.abs(consumoImplicito))} ${ins.unidade} no campo "Compras hoje", ou confere se o Fechado/Em uso está certo.</span>
+            <button data-role="confirm">Salvar mesmo assim</button>
           </div>`;
+        $('[data-role="confirm"]', warnSlot).addEventListener('click', () => {
+          overrides[overKey] = true;
+          warnSlot.innerHTML = '';
+          doSave(fechado, emuso, compras, dot);
+        });
         return;
       }
     }
@@ -378,7 +386,6 @@ function wireRowCard(card) {
       variPct = (totalHoje - prevTotal) / prevTotal;
     }
 
-    const overKey = insumoId + ':' + date;
     const outOfRange = variPct !== null && Math.abs(variPct) > VARIATION_THRESHOLD && compras === 0;
 
     if (outOfRange && !overrides[overKey]) {
